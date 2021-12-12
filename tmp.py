@@ -15,3 +15,8 @@ while True:
 while True:
     data = str(sock.recv(1024))[2:-1]
     print(data)
+
+# a = {"a": 1, "b": 2, "c": 3}
+# print(a.items())
+# for k, d in a.items():
+#     print(k, d)
