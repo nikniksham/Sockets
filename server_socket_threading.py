@@ -75,8 +75,8 @@ class Server:
         if port not in self.ports:  # Проверяем, что сокета с таким портом не существует
             sock = Socket(port, ip_address, max_users, 5)
             self.sockets.append(sock)
-            sock.run()
             self.ports.append(port)
+            Thread(target=sock.run).start()
 
             return {"success": "Port success started"}
         else:
@@ -88,4 +88,5 @@ self_ip = socket.gethostbyname(socket.gethostname())
 print(self_ip)
 
 server = Server()
-server.create_socket(9090, self_ip)
+print(server.create_socket(9090, self_ip))
+# print(server.create_socket(9091, self_ip))
