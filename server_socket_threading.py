@@ -15,33 +15,43 @@ class Socket(Thread):
         self.check_time = check_time
         self.users = {}
         self.queue = []  # Доделать
+        self.players = []
 
     def user_master(self):
         print("Success create user master")
         Thread(target=self.user_queue).start()
         while True:
             conn, address = self.sock.accept()
-            self.queue.append([conn, address])
+            nickname = str(conn.recv(1024))[2:-1]
+            print(f"{nickname} try to connect")
+            self.queue.append([nickname, conn, address])
 
     def user_queue(self):
         while True:
-            users = [[conn, address] for conn, address in self.queue]
-            for conn, address in users:
-                if len(self.users) < self.max_users:
-                    self.users[address] = conn
+            users = [[nickname, conn, address] for nickname, conn, address in self.queue]
+            for nickname, conn, address in users:
+                if len(self.users) < self.max_users and (nickname in self.players or len(self.players) < self.max_users):
+                    self.players.append(nickname)
+                    self.users[address] = [conn, nickname]
+                    print(f"{nickname} joined the game")
                     print(f"Users {len(self.users)}/{self.max_users}")
-                    conn.send(b"Success connect")
-                    self.queue.remove([conn, address])
-                    Thread(target=self.check_user_connect, args=(address, conn)).start()
+                    self.queue.remove([nickname, conn, address])
+                    Thread(target=self.check_user_connect, args=(nickname, address, conn)).start()
             time.sleep(1)
 
-    def check_user_connect(self, address, conn):
+    def check_user_connect(self, nickname, address, conn):
+        f = False
         while True:
             try:
-                conn.send(b"Check connect")
+                if not f:
+                    conn.send(b"Success connect")
+                    f = True
+                else:
+                    conn.send(b"Check connect")
             except:
                 if address in self.users:
                     del self.users[address]
+                print(f"{nickname} left the game")
                 print(f"Connection timed out with {address[0]}:{address[1]}")
                 print(f"Users {len(self.users)}/{self.max_users}")
                 break
@@ -51,18 +61,18 @@ class Socket(Thread):
         Thread(target=self.user_master).start()
         while True:
             try:
-                users = [[address, conn] for address, conn in self.users.items()]
+                users = [[address, data[0], data[1]] for address, data in self.users.items()]
             except:
                 continue
-            for address, conn in users:
+            for address, conn, nickname in users:
                 data = None
                 try:
                     data = str(conn.recv(1024))[2:-1]
                 except:
-                    print(f"Bad connection with {address}")
+                    print(f"Bad connection with {nickname} {address}")
                     time.sleep(1)
                 if data:
-                    print(f"Message from {address[0]}:{address[1]} - {data}")
+                    print(f"Message from {nickname} - {data}")
                     # Какие то данные какие то сравнения
 
 
@@ -73,7 +83,7 @@ class Server:
 
     def create_socket(self, port, ip_address, max_users=2):
         if port not in self.ports:  # Проверяем, что сокета с таким портом не существует
-            sock = Socket(port, ip_address, max_users, 5)
+            sock = Socket(port, ip_address, max_users, 3)
             self.sockets.append(sock)
             self.ports.append(port)
             Thread(target=sock.run).start()
