@@ -14,7 +14,7 @@ class Socket(Thread):
         self.sock.listen(self.max_users)
         self.check_time = check_time
         self.users = {}
-        self.queue = []  # Доделать
+        self.queue = []
         self.players = []
 
     def user_master(self):
@@ -44,10 +44,10 @@ class Socket(Thread):
         while True:
             try:
                 if not f:
-                    conn.send(b"Success connect")
+                    conn.send(b"Success connection")
                     f = True
                 else:
-                    conn.send(b"Check connect")
+                    conn.send(b"Check connection")
             except:
                 if address in self.users:
                     del self.users[address]
