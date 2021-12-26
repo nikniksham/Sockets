@@ -16,6 +16,7 @@ class Socket(Thread):
         self.users = {}
         self.queue = []
         self.players = []
+        self.active_players = []
 
     def user_master(self):
         print("Success create user master")
@@ -30,7 +31,8 @@ class Socket(Thread):
         while True:
             users = [[nickname, conn, address] for nickname, conn, address in self.queue]
             for nickname, conn, address in users:
-                if len(self.users) < self.max_users and (nickname in self.players or len(self.players) < self.max_users):
+                if len(self.users) < self.max_users and (nickname in self.players or len(self.players) < self.max_users) and nickname not in self.active_players:
+                    self.active_players.append(nickname)
                     self.players.append(nickname)
                     self.users[address] = [conn, nickname]
                     print(f"{nickname} joined the game")
@@ -50,6 +52,7 @@ class Socket(Thread):
                     conn.send(b"Check connection")
             except:
                 if address in self.users:
+                    self.active_players.remove(nickname)
                     del self.users[address]
                 print(f"{nickname} left the game")
                 print(f"Connection timed out with {address[0]}:{address[1]}")

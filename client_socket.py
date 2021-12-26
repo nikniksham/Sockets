@@ -20,10 +20,10 @@ class Client:
                 try:
                     sock = socket.socket()
                     sock.connect((self_ip, 9090))
+                    sock.send(self.to_bytes(self.nickname))
+                    data = self.to_text(sock.recv(1024))
                 except:
                     continue
-                sock.send(self.to_bytes(self.nickname))
-                data = self.to_text(sock.recv(1024))
                 if data == "Success connection":
                     print("Connected")
                     self.socket = sock
